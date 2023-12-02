@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gráfico em Tempo Real</title>
+    <!-- Inclua a biblioteca Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.5.1/plotly.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+    <div class="relatorio">
+        <form id="meuFormulario">
+            <div class="data">
+                <label for="dataInicio">
+                    Digite a data inicial para a extração do relatório:
+                </label>
+                <input type="datetime-local" name="inicio" id="inicio" required />
+            </div>
+            <div class="data">
+                <label for="dataFinal">
+                    Digite a data final:
+                </label>
+                <input type="datetime-local" name="fim" id="fim" required />
+            </div>
+            <div class="botao">
+                <input type="button" value="Gerar Relatório" onclick="gerarRelatorio();">
+            </div>
+        </form>
+        <div class="download">
+            <a href="./relatorio.pdf" download="relatorio.pdf">Baixar Relatório</a>
+        </div>
+    </div>
+    
+    <div class="CPU">
+        <h1>INFORMAÇÕES CPU</h1>
+        <h3>USO DE CPU(%)</h3>
+        <!-- Div grafico de uso da cpu-->
+        <div class="uso_cpu" style="width:75%;">
+            <canvas id="grafico_cpu"></canvas>
+        </div>
+
+        <!-- Div grafico de frequancia da cpu-->
+        <h3>FREQUÊNCIA CPU(MHZ)</h3>
+        <div class="freq_cpu" style="width:75%;">
+            <canvas id="grafico_hz"></canvas>
+        </div>
+
+        <!-- Div grafico de temperatura da cpu-->
+        <h3>TEMPERATURA CPU(°C)</h3>
+        <div class="temp_cpu" style="width:75%;">
+            <canvas id="grafico_temp"></canvas>
+        </div>
+    </div>
+
+    <div class="MEM">
+        <h1>INFORMAÇÕES DA MEMÓRIA</h1>
+        <!-- Div grafico de Uso de memoria-->
+        <h3>USO MEMORIA(MB)</h3>
+        <div class="uso_mem" style="width:75%;">
+            <canvas id="grafico_uso_mem"></canvas>
+        </div>
+
+        <!-- Div grafico de memoria livre-->
+        <h3>MEMORIA LIVRE(MB)</h3>
+        <div class="free_mem" style="width:75%;">
+            <canvas id="grafico_free_mem"></canvas>
+        </div>
+        <!-- Div grafico de Uso de Swap-->
+        <h3>USO DE SWAP(MB)</h3>
+        <div class="uso_swap" style="width:75%;">
+            <canvas id="grafico_uso_swap"></canvas>
+        </div>
+    </div>
+
+    <div>
+        <h1>INFORMAÇÕES DE REDE</h1>
+
+        <!-- Div grafico de Uso de Swap-->
+        <h3>USO DE REDE(Mb/s)</h3>
+        <div class="uso_rede" style="width:75%;">
+            <canvas id="grafico_uso_rede"></canvas>
+        </div>
+
+        <!-- Div grafico de ping-->
+        <h3>PING COM COM O ENDEREÇO ESPECÍFICADO(ms)</h3>
+        <div class="ping" style="width:75%;">
+            <canvas id="grafico_ping"></canvas>
+        </div>
+    </div>
+
+<script>
+function gerarRelatorio() {
+    var inicio = document.getElementById('inicio').value;
+    var fim = document.getElementById('fim').value;
+
+    // Evite enviar a solicitação se as datas estiverem vazias
+    if (!inicio || !fim) {
+        alert("Por favor, preencha ambas as datas.");
+        return;
+    }
+
+    // Adicione feedback de carregamento
+    var loadingIndicator = document.getElementById('loading-indicator');
+
+    if (loadingIndicator) {
+        loadingIndicator.style.display = 'inline';
+    } else {
+        console.error("Elemento 'loading-indicator' não encontrado no DOM.");
+    }
+
+    // Formate as datas conforme necessário (dd/mm/aaaa hh:mm)
+    var inicioFormatado = formatarData(inicio);
+    var fimFormatado = formatarData(fim);
+
+    // Crie um objeto FormData para enviar dados como um formulário
+    var formData = new FormData();
+    formData.append('inicio', inicioFormatado);
+    formData.append('fim', fimFormatado);
+
+    // Chame a função Python usando AJAX
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/relatorio', true);
+
+    // Tratamento de erros na chamada AJAX
+    xhr.onerror = function () {
+        alert("Erro ao enviar a solicitação. Por favor, tente novamente.");
+    };
+
+    xhr.onload = function () {
+        // Adicione feedback de carregamento
+        if (loadingIndicator) {
+            loadingIndicator.style.display = 'none';
+        }
+
+        // Verifique o status da resposta do servidor
+        if (xhr.status === 200) {
+            alert("Relatório gerado com sucesso!");
+        } else {
+            alert("Erro ao gerar o relatório. Por favor, tente novamente.");
+        }
+    };
+
+    // Envie os dados como um objeto FormData
+    xhr.send(formData);
+}
+
+
+    function formatarData(data) {
+    var dataObj = new Date(data);
+    var dia = dataObj.getDate();
+    var mes = dataObj.getMonth() + 1; // Mês é baseado em zero
+    var ano = dataObj.getFullYear();
+    var horas = dataObj.getHours();
+    var minutos = dataObj.getMinutes();
+
+    dia = dia < 10 ? '0' + dia : dia;
+    mes = mes < 10 ? '0' + dia : mes;
+    horas = horas < 10 ? '0' + horas : horas;
+    minutos = minutos < 10 ? '0' + minutos : minutos;
+
+    console.log(dia + '/' + mes + '/' + ano + ' ' + horas + ':' + minutos);
+
+    return dia + '/' + mes + '/' + ano + ' ' + horas + ':' + minutos;
+}
+
+    // Função para inicializar um gráfico
+    function initChart(elementId, yAxisMax, titulo) {
+        var ctx = document.getElementById(elementId).getContext('2d');
+        return new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: titulo,
+                    data: [],
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom'
+                    },
+                    y: {
+                        min: 0,
+                        max: yAxisMax
+                    }
+                }
+            }
+        });
+    }
+
+    // Função para atualizar um gráfico
+    function updateChart(chart, labels, data) {
+        chart.data.labels = labels;
+        chart.data.datasets[0].data = data;
+        chart.update();
+    }
+
+    // Função para conectar a um namespace e inicializar um gráfico
+    function connectAndInitChart(namespace, chart, updateEvent) {
+        var socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
+
+        // Atualizar o gráfico quando receber dados do servidor
+        socket.on(updateEvent, function (msg) {
+            updateChart(chart, msg.x, msg.y);
+        });
+    }
+
+    // Inicializar gráficos
+    var myChartCPU = initChart('grafico_cpu', 100, 'Uso de CPU');
+    var myChartHz = initChart('grafico_hz', 5000, 'Frequência');
+    var myChartTemp = initChart('grafico_temp', 100, 'Temperatura');
+    var myChartUmem = initChart('grafico_uso_mem', 5819, 'Memória em uso');
+    var myChartFreemem = initChart('grafico_free_mem', 5819, 'Memória livre');
+    var myChartUsoSwap = initChart('grafico_uso_swap', 4095, 'Swap em uso');
+    var myChartUsoRede = initChart('grafico_uso_rede', 100, 'Banda');
+    var myChartPing = initChart('grafico_ping', 100, 'Latência');
+
+    // Conectar aos namespaces e inicializar gráficos
+    connectAndInitChart('/uso_cpu', myChartCPU, 'update_graf_cpu');
+    connectAndInitChart('/hz', myChartHz, 'update_graf_hz');
+    connectAndInitChart('/temp', myChartTemp, 'update_graf_temp');
+    connectAndInitChart('/uso_mem', myChartUmem, 'update_graf_uso_mem');
+    connectAndInitChart('/free_mem', myChartFreemem, 'update_graf_free_mem');
+    connectAndInitChart('/uso_swap', myChartUsoSwap, 'update_graf_uso_swap');
+    connectAndInitChart('/uso_rede', myChartUsoRede, 'update_graf_rede');
+    connectAndInitChart('/ping', myChartPing, 'update_graf_ping');
+</script>
+
+</body>
+</html>
