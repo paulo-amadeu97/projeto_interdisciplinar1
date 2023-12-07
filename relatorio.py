@@ -103,8 +103,3 @@ def graficoSimplificado(inicio = str, fim = str):
     info = [Image(caminho) for caminho in caminhos_graficos]
 
     doc.build(info)
-
-        
-
-if __name__ == "__main__":
-    graficoSimplificado("25/11/2023 21:05", "25/11/2023 21:06")

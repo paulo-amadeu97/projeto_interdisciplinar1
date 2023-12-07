@@ -14,58 +14,58 @@ def all():
 
             if count == 4:
 
-                sys.exit(1)
+                print("arquivos CSV já existem")
 
         else:
 
-            continue
 
-    cpuData = {
 
-    "dateTime": [],
-    "usoCpu": [],
-    "frequence": [],
-    "temp": []
+            cpuData = {
 
-    }
+            "dateTime": [],
+            "usoCpu": [],
+            "frequence": [],
+            "temp": []
 
-    netData = {
+            }
 
-    "dateTime": []
+            netData = {
 
-    }
+            "dateTime": []
 
-    with open ("interfaces", "r") as interfaces:
+            }
 
-        for i in interfaces:
+            with open ("interfaces", "r") as interfaces:
 
-            netData[i.strip()] = []
+                for i in interfaces:
 
-    memData = {
+                    netData[i.strip()] = []
 
-        "dateTime": [],
-        "usoMem": [],
-        "memLivre": [],
-        "usoSwap": [],
-        "totalSwap": []
+            memData = {
 
-    }
+                "dateTime": [],
+                "usoMem": [],
+                "memLivre": [],
+                "usoSwap": [],
+                "totalSwap": []
 
-    pingData = {
+            }
 
-    "dateTime": [],
-    "ping": []
+            pingData = {
 
-    }
+            "dateTime": [],
+            "ping": []
 
-    dfCpuData = pd.DataFrame(cpuData)
-    dfNetData = pd.DataFrame(netData)
-    dfMemData = pd.DataFrame(memData)
-    dfPingData = pd.DataFrame(pingData)
+            }
 
-    dataframes = [dfCpuData, dfNetData, dfMemData, dfPingData]
-    #nameFiles = ["cpuData.csv", "netData.csv", "memData.csv", "pingData.csv"]
+            dfCpuData = pd.DataFrame(cpuData)
+            dfNetData = pd.DataFrame(netData)
+            dfMemData = pd.DataFrame(memData)
+            dfPingData = pd.DataFrame(pingData)
 
-    for df, nf in zip(dataframes, nameFiles):
+            dataframes = [dfCpuData, dfNetData, dfMemData, dfPingData]
+            #nameFiles = ["cpuData.csv", "netData.csv", "memData.csv", "pingData.csv"]
 
-        df.to_csv(nf, index=False)
+            for df, nf in zip(dataframes, nameFiles):
+
+                df.to_csv(nf, index=False)

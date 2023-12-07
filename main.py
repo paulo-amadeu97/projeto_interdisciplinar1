@@ -11,6 +11,8 @@ from flask_socketio import SocketIO
 import re
 import subprocess
 
+subprocess.run(["bash", "internet.sh"], check=True)
+
 def extract(script, variavel):
     padrao = r'^\s*export\s+{0}=(.*)'.format(re.escape(variavel))
     retorno = re.search(padrao, script, flags=re.MULTILINE)
@@ -25,7 +27,7 @@ with open('config.cfg', 'r') as config:
 interfaceMain = extract(script, 'interfaceMain')
 GerenciarSwap = extract(script, 'GerenciarSwap')
 valorCritico = extract(script, 'valorCritico')
-
+all()
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -44,34 +46,12 @@ def run_funcao(funcao):
         time.sleep(1)
         funcao()
 
-def funcao_setup(funcao):
-    funcao()
-
-
-# def swap_adm():
-#     if GerenciarSwap:
-#         subprocess.check_output("sudo su", shell=True, text=True)
-#         while True:
-#             memTotal = subprocess.check_output("free -m | grep 'Swap' | tr -s ' ' | cut -d ' ' -f2", shell=True, text=True)
-#             memTotal = float(memTotal)
-#             memUsed = subprocess.check_output("free -m | grep 'Swap' | tr -s ' ' | cut -d ' ' -f3", shell=True, text=True)
-#             memUsed = float(memUsed)
-#             if (memUsed / memTotal)*100 >= valorCritico:
-#                 print('Uso de memoria em nivel critico, criando Swap.')
-#                 subprocess.check_output("./manage_swap.sh", shell=True, text=True)
-#                 time.sleep(600)
-#                 while True:
-#                     memTotal = subprocess.check_output("free -m | grep 'Swap' | tr -s ' ' | cut -d ' ' -f2", shell=True, text=True)
-#                     memTotal = float(memTotal)
-#                     memUsed = subprocess.check_output("free -m | grep 'Swap' | tr -s ' ' | cut -d ' ' -f3", shell=True, text=True)
-#                     memUsed = float(memUsed)
-#                     if (memUsed / memTotal)*100 <= valorCritico:
-#                         print('Uso de memoria em nivel normal, revertendo Swap.')
-#                         subprocess.check_output("./manage_swap.sh", shell=True, text=True)
-#                         break
-#             else:
-#                 print("Nivel de memoria normal")
-#                 time.sleep(5)
+def manage_swap():
+    while True:
+        try:
+            subprocess.run(["bash", "manage_swap.sh"], check=True)
+        except subprocess.CalledProcessError as e:
+            time.sleep(5)
 
 def dadosToGraf(coluna, caminhoCSV, dataList, nameEspace, update_graf):
     while True:
@@ -150,14 +130,12 @@ def connect():
     socketio.emit('update_graf_ping', {'x':list(range(0, 51)), 'y': dataListPing}, namespace='/ping')
 
 if __name__ == '__main__':
-    # Thread(target=swap_adm)
-
-    Thread(target=funcao_setup)
-
-    Thread(target=funcao_setup, args=(all,))
-
     thCpu = Thread(target=run_funcao, args=(cpuWriter,))
     thCpu.start()
+
+    thManageSwap = Thread(target=manage_swap)
+    thManageSwap.start()
+
     Thread(target=dadosToGraf, args=('usoCpu', './cpuData.csv', 'dataListCpu', '/uso_cpu', 'update_graf_cpu')).start()
 
     Thread(target=dadosToGraf, args=('frequence', './cpuData.csv', 'dataListHz', '/hz', 'update_graf_hz')).start()

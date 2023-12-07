@@ -3,8 +3,8 @@
 source config.cfg
 
 pingList=()		#Array que armazena os valores de ping
-# cont=0			#contador
-# pingMed=0		#Vaviável que armazena o a média de pings
+cont=0			#contador
+pingMed=0		#Vaviável que armazena o a média de pings
 # setStep=5		#Define o número de pings da média
 # link="8.8.8.8"	#Define o endereço IP para ping.
 
